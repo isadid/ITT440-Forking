@@ -1,0 +1,72 @@
+#include <unistd.h>     /* Symbolic Constants */
+#include <sys/types.h>  /* Primitive System Data Types */ 
+#include <errno.h>      /* Errors */
+#include <stdio.h>      /* Input/Output */
+#include <sys/wait.h>   /* Wait for Process Termination */
+#include <stdlib.h>     /* General Utilities */
+#include <signal.h>
+ 
+int main(void)
+{
+    void sigint_handler(int sig);
+    pid_t parentpid; /* variable to store the child's pid */
+    int retval;     /* child process: user-provided return code */
+    int status;     /* parent process: child's exit status */
+    char s[200];
+    
+    if (signal(SIGINT, sigint_handler) == SIG_ERR){
+    perror("signal");
+    exit(1);
+    }
+
+    /* only 1 int variable is needed because each process would have its
+       own instance of the variable
+       here, 2 int variables are used for clarity */
+        
+    /* now create new process */
+    parentpid = fork();
+    
+    if (parentpid >= 0) /* fork succeeded */
+    {
+        if (parentpid == 0) /* fork() returns 0 to the child process */
+        {
+            printf("PARENT: I represent the parent process!\n");
+            printf("PARENT: This is my PID:: %d\n", getpid());
+            printf("PARENT: The PID of my child is: %d\n", getppid());
+            printf("PARENT: The value of my parentpid copy is: %d\n", parentpid);
+            printf("PARENT: Sleeping for one second...\n");
+            sleep(1); /* sleep for 1 second */
+            printf("PARENT: Enter an exit value (0 until 255): ");
+            scanf(" %d", &retval);
+            printf("PARENT: Sayonara!\n");    
+            exit(retval); /* parent exits with user-provided return code */
+        }
+        else /* fork() returns new pid to the child process */
+        {
+            printf("CHILD: I represent the child process!\n");
+            printf("CHILD: This my PID: %d\n", getpid());
+            printf("CHILD: The value of my copy of parentpid is %d\n", parentpid);
+            printf("CHILD: I will now wait for my parent to exit.\n");
+            wait(&status); /* wait for child to exit, and store its status */
+            printf("CHILD: Parent's exit code is: %d\n", WEXITSTATUS(status));
+            printf("CHILD: Sayonara!\n");             
+        }
+    }
+    else /* fork returns -1 on failure */
+    {
+        perror("fork"); /* display error message */
+    }
+        printf("Enter a string (Put Ctrl + C to get interrupt message):\n");
+    if (fgets(s, 200, stdin) == NULL)
+        perror("gets");
+    else
+        printf("you entered: %s\n", s);
+}
+    void sigint_handler(int sig)
+    {
+        printf("Ctrl + C detected! \n");
+    }
+
+
+
+
